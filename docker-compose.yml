@@ -1,0 +1,54 @@
+version: '3.9'
+services:
+  php-apache:
+    container_name: php-apache
+    build: ./php-apache
+    depends_on:
+      - postgres
+    volumes:
+      - ./public_html/:/var/www/html/
+    ports:
+      - 8000:80
+    networks:
+      - postgres  
+  
+  postgres:
+    container_name: postgres
+    image: postgres:14.1
+    environment:
+      POSTGRES_DB: "testdb"
+      POSTGRES_USER: "user"
+      POSTGRES_PASSWORD: "user"
+      PGDATA: "/var/lib/postgresql/data/pgdata"
+    volumes: 
+      - ./postgres:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d testdb"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+    networks:
+      - postgres
+  
+  pgadmin:
+    container_name: pgadmin
+    image: dpage/pgadmin4:latest
+    volumes:
+      - ./pgadmin:/var/lib/pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: "user@domain.com"
+      PGADMIN_DEFAULT_PASSWORD: "user"
+      PGADMIN_CONFIG_SERVER_MODE: "False"
+    ports:
+      - "5050:80"
+    restart: unless-stopped
+    networks:
+      - postgres
+
+networks:
+  postgres:
+    driver: bridge
